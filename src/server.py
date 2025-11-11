@@ -1,9 +1,31 @@
 import atexit
 import socket
 
+from unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
+from unitree_sdk2py.idl.default import unitree_go_msg_dds__SportModeState_
+from unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
+from unitree_sdk2py.g1.loco.g1_loco_client import LocoClient
+from unitree_sdk2py.g1.arm.g1_arm_action_client import G1ArmActionClient
+from unitree_sdk2py.g1.arm.g1_arm_action_client import action_map
+from unitree_sdk2py.g1.audio.g1_audio_client import AudioClient
+
+ChannelFactoryInitialize()
+
+motion_client = LocoClient()
+motion_client.SetTimeout(10.0)
+motion_client.Init()
+
+arm_client = G1ArmActionClient()
+arm_client.SetTimeout(10.0)
+arm_client.Init()
+
+audio_client = AudioClient()
+audio_client.SetTimeout(10.0)
+audio_client.Init()
+
 # localhost
 # Only have as true if you're running the socket on your local machine
-debug = True
+debug = False
 
 CONFIG = {
     # "hostname": "192.168.0.66",
@@ -26,6 +48,49 @@ try:
     while True:
         data = conn.recv(1024)
         print(f"received: {data.decode()}")
+
+        x = 0
+        y = 0
+        z = 0
+
+        if data.decode().startswith("command "):
+            d = data.decode().split('command ', 1)
+            command = d[1]
+            arm_client.ExecuteAction(action_map.get(command))
+            print("Command executed:", command)
+            continue
+
+        if data.decode().split(' ')[0] == "led":
+            colors = data.decode().split(' ', 1)[1].split(' ')
+            audio_client.LedControl(int(colors[0]), int(colors[1]), int(colors[2]))
+            print("Colors changed:", colors)
+            continue
+
+        if data.decode() == 'forward':
+            print("Moving forward")
+            x = 0.25
+
+        if data.decode() == 'back':
+            print("Moving backwards")
+            x = -0.25
+
+        if data.decode() == 'left':
+            print("Moving left")
+            y = 0.25
+
+        if data.decode() == 'right':
+            print("Moving right")
+            y = -0.25
+
+        if data.decode() == 'rotate left':
+            print("Rotating left")
+            z = 0.5
+
+        if data.decode() == 'rotate right':
+            print("Rotating right")
+            z = -0.5
+
+        motion_client.Move(x, y, z)
 
         if not data: break
 
