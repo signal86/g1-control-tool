@@ -66,29 +66,31 @@ try:
             print("Colors changed:", colors)
             continue
 
-        if data.decode() == 'forward':
-            print("Moving forward")
-            x = 0.25
+        data = data.decode().split()
+        for movement in data:
+            if movement == 'forward':
+                print("Moving forward")
+                x = 0.25
 
-        if data.decode() == 'back':
-            print("Moving backwards")
-            x = -0.25
+            if movement == 'back':
+                print("Moving backwards")
+                x = -0.25
 
-        if data.decode() == 'left':
-            print("Moving left")
-            y = 0.25
+            if movement == 'left':
+                print("Moving left")
+                y = 0.25
 
-        if data.decode() == 'right':
-            print("Moving right")
-            y = -0.25
+            if movement == 'right':
+                print("Moving right")
+                y = -0.25
 
-        if data.decode() == 'rotate left':
-            print("Rotating left")
-            z = 0.5
+            if movement == 'rotleft':
+                print("Rotating left")
+                z = 0.5
 
-        if data.decode() == 'rotate right':
-            print("Rotating right")
-            z = -0.5
+            if movement == 'rotright':
+                print("Rotating right")
+                z = -0.5
 
         motion_client.Move(x, y, z)
 

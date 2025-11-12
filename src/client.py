@@ -97,32 +97,48 @@ async def movement():
     while True:
         if controls['prompt'] == True: continue
         # print("movement func")
-        action_occurred = False
+        # action_occurred = False
+        motion_set = []
         if controls['w'] == True and controls['s'] != True:
             print("move forward")
-            s.send(b'forward')
-            action_occurred = True
+            # s.send(b'forward')
+            motion_set.append('forward')
+            # action_occurred = True
         if controls['s'] == True and controls['w'] != True:
             print("move backwards")
-            s.send(b'back')
-            action_occurred = True
+            # s.send(b'back')
+            motion_set.append('back')
+            # action_occurred = True
         if controls['q'] == True and controls['e'] != True:
             print("rotate left")
-            s.send(b'rotate left')
-            action_occurred = True
+            # s.send(b'rotate left')
+            motion_set.append('rotleft')
+            # action_occurred = True
         if controls['e'] == True and controls['q'] != True:
             print("rotate right")
-            s.send(b'rotate right')
-            action_occurred = True
+            # s.send(b'rotate right')
+            motion_set.append('rotright')
+            # action_occurred = True
         if controls['a'] == True and controls['d'] != True:
             print("move left")
-            s.send(b'left')
-            action_occurred = True
+            # s.send(b'left')
+            motion_set.append('left')
+            # action_occurred = True
         if controls['d'] == True and controls['a'] != True:
             print("move right")
-            s.send(b'right')
-            action_occurred = True
-        await asyncio.sleep(1 if action_occurred else 0.01)
+            # s.send(b'right')
+            motion_set.append('right')
+            # action_occurred = True
+
+        if len(motion_set) > 0:
+            bytestr = ""
+            for i in motion_set:
+                bytestr += i + " "
+            bytestr = bytestr.rstrip()
+            s.send(bytes(bytestr, encoding='utf-8'))
+            print()
+
+        await asyncio.sleep(1 if len(motion_set) > 0 else 0.01)
 
 def down(key):
     # print(f"down: {key}")
