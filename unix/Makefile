@@ -1,6 +1,6 @@
-default: main.c
+default: client.c
 	rm controltool -f
-	gcc main.c -o controltool `sdl2-config --cflags --libs` -lSDL2_ttf
+	gcc client.c -o controltool `sdl2-config --cflags --libs` -lSDL2_ttf
 
 clean:
 	rm controltool -f
