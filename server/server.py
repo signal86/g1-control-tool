@@ -1,4 +1,5 @@
 import atexit
+import asyncio
 import socket
 
 # localhost
@@ -41,69 +42,96 @@ else:
     s.bind(('0.0.0.0', CONFIG['port']))
 s.listen(1)
 
-print("wait")
-try:
-    while True:
-        conn, addr = s.accept()
-        print(f"connected: {conn}")
+async def arm_client_cmd(cmd):
+    if not debug:
+        l = asyncio.get_running_loop()
+        await l.run_in_executor(None, arm_client.ExecuteAction, action_map.get(cmd))
 
-        try:
-            while True:
-                data = conn.recv(1024)
-                print(f"received: {data.decode()}")
+async def led_switch(r, g, b):
+    if not debug:
+        l = asyncio.get_running_loop()
+        await l.run_in_executor(None, audio_client.LedControl, r, g, b)
 
-                x = 0
-                y = 0
-                z = 0
+async def motion(x, y, z):
+    if not debug:
+        l = asyncio.get_running_loop()
+        await l.run_in_executor(None, motion_client.Move, x, y, z)
 
-                if data.decode().startswith("command "):
-                    d = data.decode().split('command ', 1)
-                    command = d[1]
-                    if not debug: arm_client.ExecuteAction(action_map.get(command))
-                    print("Command executed:", command)
-                    continue
+async def main():
+    print("wait")
+    try:
+        while True:
+            conn, addr = s.accept()
+            print(f"connected: {conn}")
 
-                if data.decode().split(' ')[0] == "led":
-                    colors = data.decode().split(' ', 1)[1].split(' ')
-                    if not debug: audio_client.LedControl(int(colors[0]), int(colors[1]), int(colors[2]))
-                    print("Colors changed:", colors)
-                    continue
+            try:
+                while True:
+                    data = conn.recv(1024)
+                    print(f"received: {data.decode()}")
 
-                data = data.decode().split()
-                for movement in data:
-                    if movement == 'forward':
-                        print("Moving forward")
-                        x = 0.25
+                    x = 0
+                    y = 0
+                    z = 0
 
-                    if movement == 'back':
-                        print("Moving backwards")
-                        x = -0.25
+                    if data.decode().startswith("command "):
+                        d = data.decode().split('command ', 1)
+                        command = d[1]
+                        # if not debug: arm_client.ExecuteAction(action_map.get(command))
+                        try:
+                            await arm_client_cmd(command)
+                        except: pass
+                        print("Command executed:", command)
+                        continue
 
-                    if movement == 'left':
-                        print("Moving left")
-                        y = 0.25
+                    if data.decode().split(' ')[0] == "led":
+                        colors = data.decode().split(' ', 1)[1].split(' ')
+                        # if not debug: audio_client.LedControl(int(colors[0]), int(colors[1]), int(colors[2]))
+                        try:
+                            await led_switch(int(colors[0]), int(colors[1]), int(colors[2]))
+                        except: pass
+                        print("Colors changed:", colors)
+                        continue
 
-                    if movement == 'right':
-                        print("Moving right")
-                        y = -0.25
+                    data = data.decode().split()
+                    for movement in data:
+                        if movement == 'forward':
+                            print("Moving forward")
+                            x = 0.25
 
-                    if movement == 'rotleft':
-                        print("Rotating left")
-                        z = 0.5
+                        if movement == 'back':
+                            print("Moving backwards")
+                            x = -0.25
 
-                    if movement == 'rotright':
-                        print("Rotating right")
-                        z = -0.5
+                        if movement == 'left':
+                            print("Moving left")
+                            y = 0.25
 
-                if not debug: motion_client.Move(x, y, z)
+                        if movement == 'right':
+                            print("Moving right")
+                            y = -0.25
 
-                if not data: break
+                        if movement == 'rotleft':
+                            print("Rotating left")
+                            z = 0.5
 
-        finally:
-            conn.close()
+                        if movement == 'rotright':
+                            print("Rotating right")
+                            z = -0.5
 
-except socket.error as e:
-    print(f"error: {e}")
+                    # if not debug: motion_client.Move(x, y, z)
+                    try:
+                        await motion(x,y,z)
+                    except: pass
+
+                    if not data: break
+
+            finally:
+                conn.close()
+
+    except socket.error as e:
+        print(f"error: {e}")
+        s.close()
+
     s.close()
 
-s.close()
+asyncio.run(main())
