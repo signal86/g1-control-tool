@@ -1,0 +1,4 @@
+evdev==1.9.3
+python-xlib==0.33
+six==1.17.0
+TKinterModernThemes==1.10.5
